@@ -1,0 +1,99 @@
+<html>
+<head>
+  <title>PeerJS - Video chat example</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  <script type="text/javascript" src="peer.min.js"></script>
+  <script>
+
+    var uid;
+    var conn;
+    var connectedPeers = {};
+
+    var peer = new Peer({ key: 'zosmvxbazgi1wcdi', debug: 3});
+
+    // Show this peer's ID.
+    peer.on('open', function(id) {
+        uid = id;
+        $("#ownUserID").text(id);
+        addToSelfToChatRoom();
+    });
+
+    // Await connections from others
+    peer.on('connection', connect);
+
+     
+     // Handle a connection object.
+    function connect(c) {
+        // Handle a chat connection.
+        console.log("received connection");
+        console.log(c);
+        connectedPeers[c.peer] = 1;
+        conn = c;
+
+        conn.on("data", function(data) {
+            console.log("received data");
+            console.log(data);
+        });
+    }
+
+    function addToSelfToChatRoom() {
+        $.ajax({
+            method: "POST",
+            url: "chatRoom.php",
+            data: { uid: uid }
+        })
+        .done(function( msg ) {
+            alert( "Data Saved: " + msg );
+        });
+    }
+
+    function removeSelfFromChatRoom() {
+
+    }
+
+    $(document).ready(function() {
+        $('#connectBttn').click(function() {
+        var requestedPeer = $('#rid').val();
+            if (!connectedPeers[requestedPeer]) {
+                // Create a connection
+                conn = peer.connect(requestedPeer, {
+                    label: 'chat',
+                    serialization: 'none',
+                    metadata: {message: 'hi i want to chat with you!'}
+                });
+                c.on('open', function() {
+                    connect(c);
+                });
+                c.on('error', function(err) { alert(err); });
+            }
+            connectedPeers[requestedPeer] = 1;
+        });
+
+        // Send a chat message to all active connections.
+        $('#sendBttn'). click(function(e) {
+            e.preventDefault();
+            // For each active connection, send the message.
+            var msg = $('#messageText').val();
+            conn.send(msg);
+        });
+    });
+  </script>
+
+
+</head>
+
+<body>
+
+    <p><span>Own User ID:</span><span id='ownUserID'></span></p>
+
+    <p>Connect to peer</p>
+    <input type="text" id="rid">
+    <button id="connectBttn">Connect</button>
+
+    <p>Send message to peer</p>
+    <input type="text" id="messageText">
+    <button id="sendBttn">Send</button>
+
+</body>
+</html>
